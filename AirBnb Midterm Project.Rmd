@@ -1,0 +1,99 @@
+---
+title: "Airbnb Los Angeles Data Analysis Midterm Project"
+author: "Lee Velasco"
+date: "3/26/2025"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+library(tidyverse)
+```
+
+# Introduction
+
+Los Angeles is one of the most visited cities in the United States, and Airbnb plays a major role in its short-term rental market. With over 45,000 listings available, rental prices vary widely, and understanding what drives those prices can help both property owners and real estate professionals. This project investigates which factors most strongly influence Airbnb pricing in Los Angeles. The dataset includes several attributes such as property type, room type, number of bedrooms, and neighborhood. My goal as a data scientist for the company is to explore how these variables impact pricing and identify which types of listings tend to command higher rates.
+
+# Data and Model
+
+## Data
+
+The dataset used for this project contains 45,533 listings in the csv file, each with 25 variables. These variables include property type, room type, number of bedrooms, location details, and host characteristics. This wide range of data provides a solid foundation for identifying patterns and insights in rental pricing.
+
+## Method
+
+The analysis was conducted using RStudio. The ggplot2 was used for creating visualizations to better understand trends in the data. The analysis includes three different types of plots like box plots, bar charts, and histograms and uses functions from `dplyr` to summarize key variables. My goal is to analyze and understand the patterns in the data.
+
+```{r load-data}
+# Load data (update path if needed)
+airbnb_data <- read_csv("listings.csv")
+
+# Clean price column
+airbnb_data <- airbnb_data %>%
+  mutate(price = as.numeric(gsub("[$,]", "", price))) %>%
+  filter(!is.na(price), price < 2000)
+```
+
+# Appendix
+
+## Property Type Pricing Summary
+
+```{r boxplot}
+# Get top 10 most common property types
+top_props <- airbnb_data %>%
+  count(property_type, sort = TRUE) %>%
+  top_n(10, n)
+
+# Filter data to include only those top property types
+airbnb_data %>%
+  filter(property_type %in% top_props$property_type) %>%
+  ggplot(aes(x = reorder(property_type, price, FUN = median), y = price)) +
+  geom_boxplot(fill = "skyblue") +
+  coord_flip() +
+  labs(title = "Boxplot of Airbnb Prices (Top 10 Property Types)",
+       x = "Property Type",
+       y = "Price (USD)")
+```
+
+## Room Type Pricing Summary
+
+```{r bar-chart}
+room_summary <- airbnb_data %>%
+  group_by(room_type) %>%
+  summarise(avg_price = mean(price, na.rm = TRUE))
+
+ggplot(room_summary, aes(x = room_type, y = avg_price, fill = room_type)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Average Airbnb Price by Room Type",
+       x = "Room Type",
+       y = "Average Price (USD)") +
+  theme_minimal()
+```
+
+## Bedrooms vs Price Summary
+
+```{r histogram}
+airbnb_data %>%
+  mutate(bedroom_group = case_when(
+    bedrooms <= 2 ~ "1-2",
+    bedrooms <= 4 ~ "3-4",
+    bedrooms > 4  ~ "5+"
+  )) %>%
+  ggplot(aes(x = price)) +
+  geom_histogram(bins = 50, fill = "lightgreen", color = "black") +
+  facet_wrap(~bedroom_group) +
+  labs(title = "Histogram of Airbnb Prices by Bedroom Group",
+       x = "Price (USD)",
+       y = "Frequency") +
+  theme_light()
+```
+
+# Discussion and Analysis
+
+The visualizations provide important takeaways about the key factors influencing Airbnb prices in Los Angeles. First, property type has a noticeable effect on pricing. Entire homes and unique listings, such as guesthouses, tend to be priced significantly higher than other options. Room type is another major factor, with entire homes commanding higher prices compared to shared or private rooms. Additionally, there is a clear trend showing that as the number of bedrooms increases, so does the price. However, this trend begins to level off with very large properties, indicating that more bedrooms don’t always guarantee higher earnings. These patterns suggest that guests are willing to pay more for privacy, comfort, and distinctive spaces, but there may be a limit to how much extra they are willing to spend.
+
+# Conclusions
+
+In conclusion, property type, room type, and bedroom count are all important variables that help explain why some listings charge more than others in Los Angeles. Entire homes with multiple bedrooms consistently earn higher rates. These findings could be helpful for hosts looking to set competitive prices and for analysts seeking to understand market behavior. In the future, it would be beneficial to examine additional factors like location ratings, reviews, and host status to gain a deeper understanding of the market.
